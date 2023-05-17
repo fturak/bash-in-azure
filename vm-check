@@ -1,0 +1,45 @@
+#!/bin/bash
+
+#This script asks for the user for the name of a VM and checks if it exists in the users account, under a certain resource group.
+#If the VMs given resource group does not exist the terminal asks the user if they want to create a resource group under that name.
+#TODO: ask user if they want to create a new Ubuntu VM under the assigned resource group if their inputted one doesn't exist.
+
+setup () {
+ # Install Azure CLI
+    curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+    # Login to Azure
+    az login --use-device-code
+    echo "Logged in"
+}
+
+read_resource_group () {
+    read -p "Enter the resource group of the virtual machine: " resource_group #Assign user input to resource_group
+        if az group show --name $resource_group > /dev/null; then #Check if a resource_group named $resource_group exists
+            echo "$resource_group confirmed."
+        else
+            read -p "$resource_group has not been found. Do you want to create a new resource group called $resource_group? [y/n].
+                    Y is default." answer #Prompt to ask if user wants to create a new Resource Group using $resource_group
+            if [ $answer = y ] || [ -z $answer ]
+            then
+                az group create -l 'northeurope' -n $resource_group #Creates a resource group. Currently always in Northern Europe.
+            fi
+        fi
+}
+
+read_vm_name () {
+  #Ask for VM name
+   while true; do
+        read -p "Enter virtual machine name: " vm_name #Assign user input to vm_name
+        if az vm show --name $vm_name --resource-group $resource_group > /dev/null; then #Check if a vm named $vm_name exists
+            echo "$vm_name has been found."
+            break
+        else
+            echo "$vm_name has not been found." #TODO prompt to ask if user wants to create a new Ubuntu VM using this name.
+            break
+        fi
+    done
+}
+
+setup
+read_resource_group
+read_vm_name
